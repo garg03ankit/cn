@@ -1,0 +1,438 @@
+PART A
+
+
+=================================================================================
+Exp 1)  Point to point duplex connection(tcp)
+
+set val(stop) 50.0
+set ns [new Simulator]
+
+set tracefile [open lab1.tr w]
+$ns trace-all $tracefile
+
+set namfile [open lab1.nam w]
+$ns namtrace-all $namfile
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns duplex-link $n0 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n0 $n2 20
+$ns duplex-link $n1 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n1 $n2 20
+$ns duplex-link $n2 $n3 500.0Mb 20ms DropTail
+$ns queue-limit $n2 $n3 20
+
+
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n1 $n2 orient right-up
+$ns duplex-link-op $n2 $n3 orient right
+
+set tcp0 [new Agent/TCP]
+$ns attach-agent $n0 $tcp0
+set sink2 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink2
+$ns connect $tcp0 $sink2
+$tcp0 set packetSize_ 1500
+
+
+set tcp1 [new Agent/TCP]
+$ns attach-agent $n1 $tcp1
+set sink3 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink3
+$ns connect $tcp1 $sink3
+$tcp1 set packetSize_ 1500
+
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+$ns at 1.0 &quot;$ftp0 start&quot;
+$ns at 23.0 &quot;$ftp0 stop&quot;
+
+
+set ftp1 [new Application/FTP]
+$ftp1 attach-agent $tcp1
+$ns at 24.0 &quot;$ftp1 start&quot;
+$ns at 48.0 &quot;$ftp1 stop&quot;
+
+proc finish {} {
+global ns tracefile namfile
+$ns flush-trace
+close $tracefile
+close $namfile
+exec nam lab1.nam &amp;
+exit 0
+}
+$ns at $val(stop) &quot;$ns nam-end-wireless $val(stop)&quot;
+$ns at $val(stop) &quot;finish&quot;
+$ns at $val(stop) &quot;puts \&quot;done\&quot; ; $ns halt&quot;
+$ns run
+
+......................................................
+
+Awk Script(lab1.awk)
+BEGIN{ 
+a=0 
+b=0 
+} 
+{ 
+if($1=="r"&&$3=="2"&&$4=="3"&&$5=="tcp"&&$6=="1540") 
+{ 
+a++; 
+} 
+if($1=="d"&&$3=="2"&&$4=="3"&&$5=="tcp"&&$6=="1540") 
+{ 
+b++; 
+} 
+} 
+END{ 
+printf("\n total number of data packets received at Node 3: %d\n", a++); 
+printf("\n total number of packets dropped between Node 2 and Node 3: %d\n", b++); 
+}
+
+
+=================================================================================
+
+Exp2) Point to Point duplex connection  (TCP and UDP)
+
+set val(stop) 50.0 
+set ns [new Simulator]
+
+
+set tracefile [open lab2.tr w]
+$ns trace-all $tracefile
+
+set namfile [open lab2.nam w]
+$ns namtrace-all $namfile
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns duplex-link $n0 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n0 $n2 20
+$ns duplex-link $n2 $n3 500.0Mb 20ms DropTail
+$ns queue-limit $n2 $n3 20
+$ns duplex-link $n1 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n1 $n2 20
+
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n2 $n3 orient right
+$ns duplex-link-op $n1 $n2 orient right-up
+set tcp0 [new Agent/TCP]
+
+$ns attach-agent $n0 $tcp0
+set sink3 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink3
+$ns connect $tcp0 $sink3
+$tcp0 set packetSize_ 1000 # Change the Packet Size
+$tcp0 set interval_ 0.1
+
+
+set udp1 [new Agent/UDP]
+$ns attach-agent $n1 $udp1
+set null2 [new Agent/Null]
+$ns attach-agent $n3 $null2
+$ns connect $udp1 $null2
+$udp1 set packetSize_ 1500
+$udp1 set interval_ 0.1
+
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+$ns at 1.0 &quot;$ftp0 start&quot;
+$ns at 20.0 &quot;$ftp0 stop&quot;
+
+set cbr1 [new Application/Traffic/CBR]
+$cbr1 attach-agent $udp1
+$cbr1 set packetSize_ 1000 # Change the Packet Size
+$cbr1 set rate_ 1.0Mb
+$cbr1 set random_ null
+$ns at 24.0 &quot;$cbr1 start&quot;
+$ns at 48.0 &quot;$cbr1 stop&quot;
+
+proc finish {} {
+global ns tracefile namfile
+$ns flush-trace
+close $tracefile
+close $namfile
+exec nam lab2.nam &amp;
+exit 0
+}
+
+15
+$ns at $val(stop) &quot;$ns nam-end-wireless $val(stop)&quot;
+$ns at $val(stop) &quot;finish&quot;
+$ns at $val(stop) &quot;puts \&quot;done\&quot; ; $ns halt&quot;
+$ns run
+
+
+.....................................................
+
+
+
+Awk Script(lab2.awk) 
+
+BEGIN{
+a=0
+b=0
+}
+{
+if($1=="r"&&$4=="2"&&$5=="tcp"&&$6=="1040")
+{
+a++;
+}
+if($1=="r"&&$4=="2"&&$5=="cbr"&&$6=="1000")
+{
+b++;
+}
+
+}
+END{
+printf("\n total number of TCP data packets sent between Node 0 and Node 2: %d\n", a++); 
+printf("\n total number of UDP data packets sent between Node 1 and Node 2: %d\n", b++);
+}
+
+
+
+
+=================================================================================
+
+Exp 3) Ethernet Lan (6-10 nodes)
+
+
+set ns [new Simulator]
+set tf [open lab3.tr w]
+$ns trace-all $tf
+
+set nf [open lab3.nam w]
+$ns namtrace-all $nf
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+set n5 [$ns node]
+set n6 [$ns node]
+set n7 [$ns node]
+$ns make-lan &quot;$n0 $n1 $n2 $n3&quot; 100Mb 300ms LL Queue/DropTail Mac/802_3
+$ns make-lan &quot;$n4 $n5 $n6 $n7&quot; 100Mb 300ms LL Queue/DropTail Mac/802_3
+$ns duplex-link $n3 $n4 100Mb 300ms DropTail
+
+#error rate
+
+set err [new ErrorModel]
+$ns lossmodel $err $n3 $n4
+$err set rate_ 0.1 #Change the Error Rate 0.1, 0.3, 0.5,
+
+set udp [new Agent/UDP]
+$ns attach-agent $n1 $udp
+set cbr [new Application/Traffic/CBR]
+$cbr attach-agent $udp
+$cbr set fid_ 0
+$cbr set packetSize_ 1500
+$cbr set interval_ 0.001 #Change the Data Rate 0.001, 0.01, 0.1,
+set null [new Agent/Null]
+$ns attach-agent $n7 $null
+$ns connect $udp $null
+proc finish { } {
+global ns nf tf
+$ns flush-trace
+close $nf
+close $tf
+exec nam lab3.nam &amp;
+exit 0
+}
+$ns at 0.1 &quot;$cbr start&quot;
+$ns at 3.0 &quot;finish&quot;
+$ns run
+
+\
+........................................................
+
+Awk Script (lab3.awk)
+
+BEGIN{
+a=0
+}
+{
+if($1=="r"&&$4=="7"&&$5=="cbr"&&$6=="1000")
+{
+a++;
+}
+}
+END{
+printf("\n total number of  data packets at Node 7: %d\n", a++); 
+}
+
+
+
+=================================================================================
+
+Exp 4) Ethernet Lan congestion window.
+
+set ns [new Simulator]
+set tf [open lab4.tr w]
+$ns trace-all $tf
+set nf [open lab4.nam w]
+$ns namtrace-all $nf
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns make-lan &quot;$n0 $n1 $n2 $n3&quot; 10mb 10ms LL Queue/DropTail Mac/802_3
+
+set tcp0 [new Agent/TCP/Reno]
+$ns attach-agent $n0 $tcp0
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+set sink3 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink3
+$ns connect $tcp0 $sink3
+
+set tcp2 [new Agent/TCP]
+$ns attach-agent $n2 $tcp2
+set ftp2 [new Application/FTP]
+$ftp2 attach-agent $tcp2
+set sink1 [new Agent/TCPSink]
+$ns attach-agent $n1 $sink1
+$ns connect $tcp2 $sink1
+
+
+set file1 [open file1.tr w]
+$tcp0 attach $file1
+$tcp0 trace cwnd_
+set file2 [open file2.tr w]
+$tcp2 attach $file2
+$tcp2 trace cwnd_
+proc finish { } {
+global nf tf ns
+$ns flush-trace
+exec nam lab4.nam &amp;
+close $nf
+close $tf
+exit 0
+}
+$ns at 0.1 &quot;$ftp0 start&quot;
+$ns at 4.5 &quot;$ftp0 stop&quot;
+$ns at 1.5 &quot;$ftp2 start&quot;
+$ns at 4 &quot;$ftp2 stop&quot;
+$ns at 5.0 &quot;finish&quot;
+$ns run
+
+
+
+=================================================================================
+
+Exp 5) Link state Routing Algo
+
+set val(stop) 10.0 
+
+set ns [new Simulator]
+
+set tracefile [open lab6.tr w]
+$ns trace-all $tracefile
+
+set namfile [open lab6.nam w]
+$ns namtrace-all $namfile
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+
+$ns duplex-link $n0 $n1 100.0Mb 10ms DropTail
+$ns queue-limit $n0 $n1 50
+$ns duplex-link $n0 $n2 100.0Mb 10ms DropTail
+$ns queue-limit $n0 $n2 50
+$ns duplex-link $n2 $n3 100.0Mb 10ms DropTail
+$ns queue-limit $n2 $n3 50
+$ns duplex-link $n1 $n3 100.0Mb 10ms DropTail
+$ns queue-limit $n1 $n3 50
+$ns duplex-link $n3 $n4 100.0Mb 10ms DropTail
+$ns queue-limit $n3 $n4 50
+$ns duplex-link $n0 $n3 100.0Mb 10ms DropTail
+$ns queue-limit $n0 $n3 50
+$ns duplex-link $n1 $n2 100.0Mb 10ms DropTail
+$ns queue-limit $n1 $n2 50
+
+#Give node position (for NAM)
+$ns duplex-link-op $n0 $n1 orient right
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n2 $n3 orient right
+$ns duplex-link-op $n1 $n3 orient left-down
+$ns duplex-link-op $n3 $n4 orient left-down
+$ns duplex-link-op $n0 $n3 orient right-down
+$ns duplex-link-op $n1 $n2 orient left-down
+
+$ns cost $n0 $n1 2
+$ns cost $n0 $n2 1
+$ns cost $n0 $n3 3
+
+$ns cost $n1 $n0 2
+$ns cost $n1 $n2 2
+$ns cost $n1 $n3 3
+
+$ns cost $n2 $n1 2
+$ns cost $n2 $n0 1
+$ns cost $n2 $n3 1
+
+$ns cost $n3 $n2 1
+$ns cost $n3 $n1 3
+$ns cost $n3 $n0 3
+
+$ns cost $n3 $n4 2
+$ns cost $n4 $n3 2
+
+
+
+set udp0 [new Agent/UDP]
+$ns attach-agent $n0 $udp0
+set null1 [new Agent/Null]
+$ns attach-agent $n4 $null1
+$ns connect $udp0 $null1
+$udp0 set packetSize_ 1500
+
+set cbr0 [new Application/Traffic/CBR]
+$cbr0 attach-agent $udp0
+$cbr0 set packetSize_ 1500
+$cbr0 set rate_ 1.0Mb
+$cbr0 set random_ null
+$ns at 1.0 &quot;$cbr0 start&quot;
+$ns at 5.0 &quot;$cbr0 stop&quot;
+$ns rtproto LS
+
+#Define a &#39;finish&#39; procedure
+proc finish {} {
+global ns tracefile namfile
+$ns flush-trace
+close $tracefile
+close $namfile
+exec nam lab6.nam &amp;
+exit 0
+}
+$ns at $val(stop) &quot;$ns nam-end-wireless $val(stop)&quot;
+$ns at $val(stop) &quot;finish&quot;
+$ns at $val(stop) &quot;puts \"quot;done\&quot; ; $ns halt";
+$ns run
+
+.................................................................................
+
+Awk Script (lab6.awk)
+BEGIN{
+a=0
+}
+{
+if($1=="r"&&$3=="3"&&$4=="4"&&$5=="cbr"&&$6=="1500")
+{
+a++;
+}
+}
+END{
+printf("\n total number of data packets received at Node 4: %d\n", a++); 
+}
+

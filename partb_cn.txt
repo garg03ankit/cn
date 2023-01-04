@@ -1,0 +1,389 @@
+/*bitstuffing*/
+
+
+#include <stdio.h>
+#include <string.h>
+int main()
+{
+    int a[20], b[30], i, j, k, count, n;
+    printf("Enter frame size (Example: 8):");
+    scanf("%d", &n);
+    printf("Enter the frame in the form of 0 and 1 :");
+    for (i = 0; i < n; i++)
+        scanf("%d", &a[i]);
+    i = 0;
+    count = 1;
+    j = 0;
+    while (i < n)
+    {
+        if (a[i] == 1)
+        {
+            b[j] = a[i];
+            for (k = i + 1; a[k] == 1 && k < n && count < 5; k++)
+            {
+                j++;
+                b[j] = a[k];
+                count++;
+                if (count == 5)
+                {
+                    j++;
+                    b[j] = 0;
+                }
+                i = k;
+            }
+        }
+        else
+        {
+            b[j] = a[i];
+        }
+        i++;
+        j++;
+    }
+    printf("After Bit Stuffing :");
+    for (i = 0; i < j; i++)
+        printf("%d", b[i]);
+    return 0;
+}
+
+
+========================================================================================================================
+
+
+/*characer stuffing*/
+
+
+#include <stdio.h>
+#include <string.h>
+int main()
+{
+    char c[80], d[80], ed[10], sd[10];
+    int j, m, i;
+    strcpy(c, " ");
+    strcpy(sd, "dlestx");
+    strcpy(ed, "dleetx");
+    printf("\n Enter the characters to be stuffed:");
+    scanf("%s", c);
+    strcpy(d, sd);
+    m = strlen(c);
+    for (i = 0, j = 6; i < m + 1; i++, j++)
+    {
+        if ((c[i] == 'd') && (c[i + 1] == '1' && c[i + 2] == 'e'))
+        {
+            d[j] = 'd';
+            j++;
+            d[j] = '1';
+            j++;
+            d[j] = 'e';
+            j++;
+            i = i + 3;
+        }
+        d[j] = c[i];
+    }
+    j++;
+    d[j] = '\0';
+    strcat(d, ed);
+    printf("\n After stuffing, transmitted data: %s", d);
+    return 0;
+}
+
+
+=====================================================================================================================
+
+/*stop and wait*/
+
+
+// Program for Stop and waitprotocol
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main()
+{
+    int i, j, noframes;
+    int x, x1, x2;
+
+    x1 = 10;
+    i = 1;
+    j = 1;
+    printf("\n Enter number of frames\t:");
+    scanf("%d", &noframes);
+    while (noframes > 0)
+    {
+        printf("\n Sending frame %d", i);
+        x = rand() % 15;
+        if (x % 5 == 0)
+        {
+            for (x2 = 1; x2 < 2; x2++)
+            {
+                printf("\n Waiting for %d seconds\n", x2);
+                sleep(x2);
+            }
+            printf(" Sending frame %d\n", i);
+            x = rand() % 10;
+        }
+        printf("\n Acknowledgement received for frame %d\n", j);
+        noframes = noframes - 1;
+        i++;
+        j++;
+    }
+    printf("\n End of stop and wait protocol");
+    return 0;
+}
+
+
+
+============================================================================================================================
+
+/*sliding window*/
+
+#include  <stdio.h>
+#include  <stdlib.h>
+#include <string.h>
+int main()
+{
+int w,i,f,frames[50];
+
+	printf("Enter window size: ");
+	scanf("%d",&w);
+
+	printf("\nEnter number of frames to transmit: ");
+	scanf("%d", &f);
+
+	printf("\nEnter %d frames: ",f);
+
+	for(i=1; i<=f; i++)
+		scanf("%d",&frames[i]);
+
+printf("\nWith sliding window protocol the frames will be sent in the following manner (assuming no corruption of frames)\n\n");
+printf("After sending %d frames at each stage sender waits for acknowledgement sent by the receiver\n\n",w);
+
+	for(i=1;i<=f;i++)
+	 {
+		if(i%w==0)
+		{
+			printf("%d\n",frames[i]);
+			printf("Acknowledgement of above frames sent is received by sender\n\n");
+		}
+		else
+		printf("%d ",frames[i]);
+	}
+
+	if(f%w!=0)
+		printf("\nAcknowledgement of above frames sent is received by sender\n");
+
+	return 0;
+}
+
+
+=====================================================================================================================================
+
+/*leaky bucket*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdio.h>
+int min(int x, int y)
+{
+    if (x < y)
+        return x;
+    else
+        return y;
+}
+
+int main()
+{
+    int drop = 0, count = 0, inp[25];
+    int mini, nsec, cap, i, process;
+
+    printf("\n Enter the Bucket Size: ");
+    scanf("%d", &cap);
+    printf("\n Enter the Operation Rate: ");
+    scanf("%d", &process);
+    printf("\n Enter the no. of Seconds you want to Stimulate: ");
+    scanf("%d", &nsec);
+    for (i = 0; i < nsec; i++)
+    {
+        printf("\n Enter the Size of the Packet entering at %d sec: ", i + 1);
+        scanf("%d", &inp[i]);
+    }
+    printf("\nSecond|PacketRecieved|PacketSent|PacketLeft|Packet Dropped|\n");
+    printf("--------------------------------------------------------------\n");
+    for (i = 0; i < nsec; i++)
+    {
+        count += inp[i];
+        if (count > cap)
+        {
+            drop = count - cap;
+            count = cap;
+        }
+        printf("%d", i + 1);
+        printf("\t%d", inp[i]);
+        mini = min(count, process);
+        printf("\t\t%d", mini);
+        count = count - mini;
+        printf("\t\t%d", count);
+        printf("\t\t%d\n", drop);
+        drop = 0;
+    }
+    for (count != 0; i++;)
+    {
+        if (count > cap)
+        {
+
+            drop = count - cap;
+            count = cap;
+        }
+        printf("%d", i + 1);
+        printf("\t0");
+        mini = min(count, process);
+        printf("\t\t%d", mini);
+        count = count - mini;
+        printf("\t\t%d", count);
+        printf("\t\t%d\n", drop);
+    }
+}
+
+
+=============================================================================================================================
+
+/*dijikstar*/
+
+
+#include <stdio.h>
+#include <conio.h>
+#define INFINITY 9999
+#define MAX 10
+
+void dijkstra(int G[MAX][MAX], int n, int startnode);
+
+int main()
+{
+    int G[MAX][MAX], i, j, n, u;
+    printf("Enter no. of vertices:");
+    scanf("%d", &n);
+    printf("\nEnter the adjacency matrix:\n");
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            scanf("%d", &G[i][j]);
+    printf("\nEnter the starting node:");
+    scanf("%d", &u);
+    dijkstra(G, n, u);
+    return 0;
+}
+
+void dijkstra(int G[MAX][MAX], int n, int startnode)
+{
+
+    int cost[MAX][MAX], distance[MAX], pred[MAX];
+    int visited[MAX], count, mindistance, nextnode, i, j;
+    // pred[] stores the predecessor of each node
+    // count gives the number of nodes seen so far
+    // create the cost matrix
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            if (G[i][j] == 0)
+                cost[i][j] = INFINITY;
+            else
+                cost[i][j] = G[i][j];
+    // initialize pred[],distance[] and visited[]
+    for (i = 0; i < n; i++)
+    {
+        distance[i] = cost[startnode][i];
+        pred[i] = startnode;
+        visited[i] = 0;
+    }
+    distance[startnode] = 0;
+    visited[startnode] = 1;
+    count = 1;
+    while (count < n - 1)
+    {
+        mindistance = INFINITY;
+        // nextnode gives the node at minimum distance
+        for (i = 0; i < n; i++)
+            if (distance[i] < mindistance && !visited[i])
+            {
+                mindistance = distance[i];
+                nextnode = i;
+            }
+        // check if a better path exists through nextnode
+        visited[nextnode] = 1;
+        for (i = 0; i < n; i++)
+            if (!visited[i])
+                if (mindistance + cost[nextnode][i] < distance[i])
+                {
+                    distance[i] = mindistance + cost[nextnode][i];
+                    pred[i] = nextnode;
+                }
+        count++;
+    }
+
+    // print the path and distance of each node
+    for (i = 0; i < n; i++)
+        if (i != startnode)
+        {
+            printf("\nDistance of node%d=%d", i, distance[i]);
+            printf("\nPath=%d", i);
+            j = i;
+            do
+            {
+                j = pred[j];
+                printf("<-%d", j);
+            } while (j != startnode);
+        }
+}
+
+
+===========================================================================================================
+
+distance vector
+
+
+#include<stdio.h>
+struct node
+{
+    unsigned dist[20];
+    unsigned from[20];
+}rt[10];
+int main()
+{
+    int costmat[20][20];
+    int nodes,i,j,k,count=0;
+    printf("\nEnter the number of nodes : ");
+    scanf("%d",&nodes);//Enter the nodes
+    printf("\nEnter the cost matrix :\n");
+    for(i=0;i<nodes;i++)
+    {
+        for(j=0;j<nodes;j++)
+        {
+            scanf("%d",&costmat[i][j]);
+            costmat[i][i]=0;
+            rt[i].dist[j]=costmat[i][j];//initialise the distance equal to cost matrix
+            rt[i].from[j]=j;
+        }
+    }
+        do
+        {
+            count=0;
+            for(i=0;i<nodes;i++)//We choose arbitary vertex k and we calculate the direct distance from the node i to k using the cost matrix
+            //and add the distance from k to node j
+            for(j=0;j<nodes;j++)
+            for(k=0;k<nodes;k++)
+                if(rt[i].dist[j]>costmat[i][k]+rt[k].dist[j])
+                {//We calculate the minimum distance
+                    rt[i].dist[j]=rt[i].dist[k]+rt[k].dist[j];
+                    rt[i].from[j]=k;
+                    count++;
+                }
+        }while(count!=0);
+        for(i=0;i<nodes;i++)
+        {
+            printf("\n\n For router %d\n",i+1);
+            for(j=0;j<nodes;j++)
+            {
+                printf("\t\nnode %d via %d Distance %d ",j+1,rt[i].from[j]+1,rt[i].dist[j]);
+            }
+        }
+    printf("\n\n");
+}

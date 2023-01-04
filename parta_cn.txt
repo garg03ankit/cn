@@ -1,0 +1,744 @@
+PART A
+
+
+=================================================================================
+Exp 1)  Point to point duplex connection(tcp)
+
+set val(stop) 50.0
+set ns [new Simulator]
+
+set tracefile [open lab1.tr w]
+$ns trace-all $tracefile
+
+set namfile [open lab1.nam w]
+$ns namtrace-all $namfile
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns duplex-link $n0 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n0 $n2 20
+$ns duplex-link $n1 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n1 $n2 20
+$ns duplex-link $n2 $n3 500.0Mb 20ms DropTail
+$ns queue-limit $n2 $n3 20
+
+
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n1 $n2 orient right-up
+$ns duplex-link-op $n2 $n3 orient right
+
+set tcp0 [new Agent/TCP]
+$ns attach-agent $n0 $tcp0
+set sink2 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink2
+$ns connect $tcp0 $sink2
+$tcp0 set packetSize_ 1500
+
+
+set tcp1 [new Agent/TCP]
+$ns attach-agent $n1 $tcp1
+set sink3 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink3
+$ns connect $tcp1 $sink3
+$tcp1 set packetSize_ 1500
+
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+$ns at 1.0 &quot;$ftp0 start&quot;
+$ns at 23.0 &quot;$ftp0 stop&quot;
+
+
+set ftp1 [new Application/FTP]
+$ftp1 attach-agent $tcp1
+$ns at 24.0 &quot;$ftp1 start&quot;
+$ns at 48.0 &quot;$ftp1 stop&quot;
+
+proc finish {} {
+global ns tracefile namfile
+$ns flush-trace
+close $tracefile
+close $namfile
+exec nam lab1.nam &amp;
+exit 0
+}
+$ns at $val(stop) &quot;$ns nam-end-wireless $val(stop)&quot;
+$ns at $val(stop) &quot;finish&quot;
+$ns at $val(stop) &quot;puts \&quot;done\&quot; ; $ns halt&quot;
+$ns run
+
+=================================================================================
+
+Exp2) Point to Point duplex connection  (TCP and UDP)
+
+set val(stop) 50.0 
+set ns [new Simulator]
+
+
+set tracefile [open lab2.tr w]
+$ns trace-all $tracefile
+
+set namfile [open lab2.nam w]
+$ns namtrace-all $namfile
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns duplex-link $n0 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n0 $n2 20
+$ns duplex-link $n2 $n3 500.0Mb 20ms DropTail
+$ns queue-limit $n2 $n3 20
+$ns duplex-link $n1 $n2 500.0Mb 20ms DropTail
+$ns queue-limit $n1 $n2 20
+
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n2 $n3 orient right
+$ns duplex-link-op $n1 $n2 orient right-up
+set tcp0 [new Agent/TCP]
+
+$ns attach-agent $n0 $tcp0
+set sink3 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink3
+$ns connect $tcp0 $sink3
+$tcp0 set packetSize_ 1000 # Change the Packet Size
+$tcp0 set interval_ 0.1
+
+
+set udp1 [new Agent/UDP]
+$ns attach-agent $n1 $udp1
+set null2 [new Agent/Null]
+$ns attach-agent $n3 $null2
+$ns connect $udp1 $null2
+$udp1 set packetSize_ 1500
+$udp1 set interval_ 0.1
+
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+$ns at 1.0 &quot;$ftp0 start&quot;
+$ns at 20.0 &quot;$ftp0 stop&quot;
+
+set cbr1 [new Application/Traffic/CBR]
+$cbr1 attach-agent $udp1
+$cbr1 set packetSize_ 1000 # Change the Packet Size
+$cbr1 set rate_ 1.0Mb
+$cbr1 set random_ null
+$ns at 24.0 &quot;$cbr1 start&quot;
+$ns at 48.0 &quot;$cbr1 stop&quot;
+
+proc finish {} {
+global ns tracefile namfile
+$ns flush-trace
+close $tracefile
+close $namfile
+exec nam lab2.nam &amp;
+exit 0
+}
+
+15
+$ns at $val(stop) &quot;$ns nam-end-wireless $val(stop)&quot;
+$ns at $val(stop) &quot;finish&quot;
+$ns at $val(stop) &quot;puts \&quot;done\&quot; ; $ns halt&quot;
+$ns run
+
+
+
+=================================================================================
+
+Exp 3) Ethernet Lan (6-10 nodes)
+
+
+set ns [new Simulator]
+set tf [open lab3.tr w]
+$ns trace-all $tf
+
+set nf [open lab3.nam w]
+$ns namtrace-all $nf
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+set n5 [$ns node]
+set n6 [$ns node]
+set n7 [$ns node]
+$ns make-lan &quot;$n0 $n1 $n2 $n3&quot; 100Mb 300ms LL Queue/DropTail Mac/802_3
+$ns make-lan &quot;$n4 $n5 $n6 $n7&quot; 100Mb 300ms LL Queue/DropTail Mac/802_3
+$ns duplex-link $n3 $n4 100Mb 300ms DropTail
+
+#error rate
+
+set err [new ErrorModel]
+$ns lossmodel $err $n3 $n4
+$err set rate_ 0.1 #Change the Error Rate 0.1, 0.3, 0.5,
+
+set udp [new Agent/UDP]
+$ns attach-agent $n1 $udp
+set cbr [new Application/Traffic/CBR]
+$cbr attach-agent $udp
+$cbr set fid_ 0
+$cbr set packetSize_ 1500
+$cbr set interval_ 0.001 #Change the Data Rate 0.001, 0.01, 0.1,
+set null [new Agent/Null]
+$ns attach-agent $n7 $null
+$ns connect $udp $null
+proc finish { } {
+global ns nf tf
+$ns flush-trace
+close $nf
+close $tf
+exec nam lab3.nam &amp;
+exit 0
+}
+$ns at 0.1 &quot;$cbr start&quot;
+$ns at 3.0 &quot;finish&quot;
+$ns run
+
+
+=================================================================================
+
+Exp 4) Ethernet Lan congestion window.
+
+set ns [new Simulator]
+set tf [open lab4.tr w]
+$ns trace-all $tf
+set nf [open lab4.nam w]
+$ns namtrace-all $nf
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns make-lan &quot;$n0 $n1 $n2 $n3&quot; 10mb 10ms LL Queue/DropTail Mac/802_3
+
+set tcp0 [new Agent/TCP/Reno]
+$ns attach-agent $n0 $tcp0
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+set sink3 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink3
+$ns connect $tcp0 $sink3
+
+set tcp2 [new Agent/TCP]
+$ns attach-agent $n2 $tcp2
+set ftp2 [new Application/FTP]
+$ftp2 attach-agent $tcp2
+set sink1 [new Agent/TCPSink]
+$ns attach-agent $n1 $sink1
+$ns connect $tcp2 $sink1
+
+
+set file1 [open file1.tr w]
+$tcp0 attach $file1
+$tcp0 trace cwnd_
+set file2 [open file2.tr w]
+$tcp2 attach $file2
+$tcp2 trace cwnd_
+proc finish { } {
+global nf tf ns
+$ns flush-trace
+exec nam lab4.nam &amp;
+close $nf
+close $tf
+exit 0
+}
+$ns at 0.1 &quot;$ftp0 start&quot;
+$ns at 4.5 &quot;$ftp0 stop&quot;
+$ns at 1.5 &quot;$ftp2 start&quot;
+$ns at 4 &quot;$ftp2 stop&quot;
+$ns at 5.0 &quot;finish&quot;
+$ns run
+
+
+
+=================================================================================
+
+Exp 5) Link state Routing Algo
+
+set val(stop) 10.0 
+
+set ns [new Simulator]
+
+set tracefile [open lab6.tr w]
+$ns trace-all $tracefile
+
+set namfile [open lab6.nam w]
+$ns namtrace-all $namfile
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+
+$ns duplex-link $n0 $n1 100.0Mb 10ms DropTail
+$ns queue-limit $n0 $n1 50
+$ns duplex-link $n0 $n2 100.0Mb 10ms DropTail
+$ns queue-limit $n0 $n2 50
+$ns duplex-link $n2 $n3 100.0Mb 10ms DropTail
+$ns queue-limit $n2 $n3 50
+$ns duplex-link $n1 $n3 100.0Mb 10ms DropTail
+$ns queue-limit $n1 $n3 50
+$ns duplex-link $n3 $n4 100.0Mb 10ms DropTail
+$ns queue-limit $n3 $n4 50
+$ns duplex-link $n0 $n3 100.0Mb 10ms DropTail
+$ns queue-limit $n0 $n3 50
+$ns duplex-link $n1 $n2 100.0Mb 10ms DropTail
+$ns queue-limit $n1 $n2 50
+
+#Give node position (for NAM)
+$ns duplex-link-op $n0 $n1 orient right
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n2 $n3 orient right
+$ns duplex-link-op $n1 $n3 orient left-down
+$ns duplex-link-op $n3 $n4 orient left-down
+$ns duplex-link-op $n0 $n3 orient right-down
+$ns duplex-link-op $n1 $n2 orient left-down
+
+$ns cost $n0 $n1 2
+$ns cost $n0 $n2 1
+$ns cost $n0 $n3 3
+
+$ns cost $n1 $n0 2
+$ns cost $n1 $n2 2
+$ns cost $n1 $n3 3
+
+$ns cost $n2 $n1 2
+$ns cost $n2 $n0 1
+$ns cost $n2 $n3 1
+
+$ns cost $n3 $n2 1
+$ns cost $n3 $n1 3
+$ns cost $n3 $n0 3
+
+$ns cost $n3 $n4 2
+$ns cost $n4 $n3 2
+
+
+
+set udp0 [new Agent/UDP]
+$ns attach-agent $n0 $udp0
+set null1 [new Agent/Null]
+$ns attach-agent $n4 $null1
+$ns connect $udp0 $null1
+$udp0 set packetSize_ 1500
+
+set cbr0 [new Application/Traffic/CBR]
+$cbr0 attach-agent $udp0
+$cbr0 set packetSize_ 1500
+$cbr0 set rate_ 1.0Mb
+$cbr0 set random_ null
+$ns at 1.0 &quot;$cbr0 start&quot;
+$ns at 5.0 &quot;$cbr0 stop&quot;
+$ns rtproto LS
+
+#Define a &#39;finish&#39; procedure
+proc finish {} {
+global ns tracefile namfile
+$ns flush-trace
+close $tracefile
+close $namfile
+exec nam lab6.nam &amp;
+exit 0
+}
+$ns at $val(stop) &quot;$ns nam-end-wireless $val(stop)&quot;
+$ns at $val(stop) &quot;finish&quot;
+$ns at $val(stop) &quot;puts \&quot;done\&quot; ; $ns halt&quot;
+$ns run
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+/*bitstuffing*/
+
+
+#include <stdio.h>
+#include <string.h>
+int main()
+{
+    int a[20], b[30], i, j, k, count, n;
+    printf("Enter frame size (Example: 8):");
+    scanf("%d", &n);
+    printf("Enter the frame in the form of 0 and 1 :");
+    for (i = 0; i < n; i++)
+        scanf("%d", &a[i]);
+    i = 0;
+    count = 1;
+    j = 0;
+    while (i < n)
+    {
+        if (a[i] == 1)
+        {
+            b[j] = a[i];
+            for (k = i + 1; a[k] == 1 && k < n && count < 5; k++)
+            {
+                j++;
+                b[j] = a[k];
+                count++;
+                if (count == 5)
+                {
+                    j++;
+                    b[j] = 0;
+                }
+                i = k;
+            }
+        }
+        else
+        {
+            b[j] = a[i];
+        }
+        i++;
+        j++;
+    }
+    printf("After Bit Stuffing :");
+    for (i = 0; i < j; i++)
+        printf("%d", b[i]);
+    return 0;
+}
+
+
+========================================================================================================================
+
+
+/*characer stuffing*/
+
+
+#include <stdio.h>
+#include <string.h>
+int main()
+{
+    char c[80], d[80], ed[10], sd[10];
+    int j, m, i;
+    strcpy(c, " ");
+    strcpy(sd, "dlestx");
+    strcpy(ed, "dleetx");
+    printf("\n Enter the characters to be stuffed:");
+    scanf("%s", c);
+    strcpy(d, sd);
+    m = strlen(c);
+    for (i = 0, j = 6; i < m + 1; i++, j++)
+    {
+        if ((c[i] == 'd') && (c[i + 1] == '1' && c[i + 2] == 'e'))
+        {
+            d[j] = 'd';
+            j++;
+            d[j] = '1';
+            j++;
+            d[j] = 'e';
+            j++;
+            i = i + 3;
+        }
+        d[j] = c[i];
+    }
+    j++;
+    d[j] = '\0';
+    strcat(d, ed);
+    printf("\n After stuffing, transmitted data: %s", d);
+    return 0;
+}
+
+
+=====================================================================================================================
+
+/*stop and wait*/
+
+
+// Program for Stop and waitprotocol
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main()
+{
+    int i, j, noframes;
+    int x, x1, x2;
+
+    x1 = 10;
+    i = 1;
+    j = 1;
+    printf("\n Enter number of frames\t:");
+    scanf("%d", &noframes);
+    while (noframes > 0)
+    {
+        printf("\n Sending frame %d", i);
+        x = rand() % 15;
+        if (x % 5 == 0)
+        {
+            for (x2 = 1; x2 < 2; x2++)
+            {
+                printf("\n Waiting for %d seconds\n", x2);
+                sleep(x2);
+            }
+            printf(" Sending frame %d\n", i);
+            x = rand() % 10;
+        }
+        printf("\n Acknowledgement received for frame %d\n", j);
+        noframes = noframes - 1;
+        i++;
+        j++;
+    }
+    printf("\n End of stop and wait protocol");
+    return 0;
+}
+
+
+
+============================================================================================================================
+
+/*sliding window*/
+
+#include  <stdio.h>
+#include  <stdlib.h>
+#include <string.h>
+int main()
+{
+int w,i,f,frames[50];
+
+	printf("Enter window size: ");
+	scanf("%d",&w);
+
+	printf("\nEnter number of frames to transmit: ");
+	scanf("%d", &f);
+
+	printf("\nEnter %d frames: ",f);
+
+	for(i=1; i<=f; i++)
+		scanf("%d",&frames[i]);
+
+printf("\nWith sliding window protocol the frames will be sent in the following manner (assuming no corruption of frames)\n\n");
+printf("After sending %d frames at each stage sender waits for acknowledgement sent by the receiver\n\n",w);
+
+	for(i=1;i<=f;i++)
+	 {
+		if(i%w==0)
+		{
+			printf("%d\n",frames[i]);
+			printf("Acknowledgement of above frames sent is received by sender\n\n");
+		}
+		else
+		printf("%d ",frames[i]);
+	}
+
+	if(f%w!=0)
+		printf("\nAcknowledgement of above frames sent is received by sender\n");
+
+	return 0;
+}
+
+
+=====================================================================================================================================
+
+/*leaky bucket*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdio.h>
+int min(int x, int y)
+{
+    if (x < y)
+        return x;
+    else
+        return y;
+}
+
+int main()
+{
+    int drop = 0, count = 0, inp[25];
+    int mini, nsec, cap, i, process;
+
+    printf("\n Enter the Bucket Size: ");
+    scanf("%d", &cap);
+    printf("\n Enter the Operation Rate: ");
+    scanf("%d", &process);
+    printf("\n Enter the no. of Seconds you want to Stimulate: ");
+    scanf("%d", &nsec);
+    for (i = 0; i < nsec; i++)
+    {
+        printf("\n Enter the Size of the Packet entering at %d sec: ", i + 1);
+        scanf("%d", &inp[i]);
+    }
+    printf("\nSecond|PacketRecieved|PacketSent|PacketLeft|Packet Dropped|\n");
+    printf("--------------------------------------------------------------\n");
+    for (i = 0; i < nsec; i++)
+    {
+        count += inp[i];
+        if (count > cap)
+        {
+            drop = count - cap;
+            count = cap;
+        }
+        printf("%d", i + 1);
+        printf("\t%d", inp[i]);
+        mini = min(count, process);
+        printf("\t\t%d", mini);
+        count = count - mini;
+        printf("\t\t%d", count);
+        printf("\t\t%d\n", drop);
+        drop = 0;
+    }
+    for (count != 0; i++;)
+    {
+        if (count > cap)
+        {
+
+            drop = count - cap;
+            count = cap;
+        }
+        printf("%d", i + 1);
+        printf("\t0");
+        mini = min(count, process);
+        printf("\t\t%d", mini);
+        count = count - mini;
+        printf("\t\t%d", count);
+        printf("\t\t%d\n", drop);
+    }
+}
+
+
+=============================================================================================================================
+
+/*dijikstar*/
+
+
+#include <stdio.h>
+#include <conio.h>
+#define INFINITY 9999
+#define MAX 10
+
+void dijkstra(int G[MAX][MAX], int n, int startnode);
+
+int main()
+{
+    int G[MAX][MAX], i, j, n, u;
+    printf("Enter no. of vertices:");
+    scanf("%d", &n);
+    printf("\nEnter the adjacency matrix:\n");
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            scanf("%d", &G[i][j]);
+    printf("\nEnter the starting node:");
+    scanf("%d", &u);
+    dijkstra(G, n, u);
+    return 0;
+}
+
+void dijkstra(int G[MAX][MAX], int n, int startnode)
+{
+
+    int cost[MAX][MAX], distance[MAX], pred[MAX];
+    int visited[MAX], count, mindistance, nextnode, i, j;
+    // pred[] stores the predecessor of each node
+    // count gives the number of nodes seen so far
+    // create the cost matrix
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            if (G[i][j] == 0)
+                cost[i][j] = INFINITY;
+            else
+                cost[i][j] = G[i][j];
+    // initialize pred[],distance[] and visited[]
+    for (i = 0; i < n; i++)
+    {
+        distance[i] = cost[startnode][i];
+        pred[i] = startnode;
+        visited[i] = 0;
+    }
+    distance[startnode] = 0;
+    visited[startnode] = 1;
+    count = 1;
+    while (count < n - 1)
+    {
+        mindistance = INFINITY;
+        // nextnode gives the node at minimum distance
+        for (i = 0; i < n; i++)
+            if (distance[i] < mindistance && !visited[i])
+            {
+                mindistance = distance[i];
+                nextnode = i;
+            }
+        // check if a better path exists through nextnode
+        visited[nextnode] = 1;
+        for (i = 0; i < n; i++)
+            if (!visited[i])
+                if (mindistance + cost[nextnode][i] < distance[i])
+                {
+                    distance[i] = mindistance + cost[nextnode][i];
+                    pred[i] = nextnode;
+                }
+        count++;
+    }
+
+    // print the path and distance of each node
+    for (i = 0; i < n; i++)
+        if (i != startnode)
+        {
+            printf("\nDistance of node%d=%d", i, distance[i]);
+            printf("\nPath=%d", i);
+            j = i;
+            do
+            {
+                j = pred[j];
+                printf("<-%d", j);
+            } while (j != startnode);
+        }
+}
+
+
+===========================================================================================================
+
+distance vector
+
+
+#include<stdio.h>
+struct node
+{
+    unsigned dist[20];
+    unsigned from[20];
+}rt[10];
+int main()
+{
+    int costmat[20][20];
+    int nodes,i,j,k,count=0;
+    printf("\nEnter the number of nodes : ");
+    scanf("%d",&nodes);//Enter the nodes
+    printf("\nEnter the cost matrix :\n");
+    for(i=0;i<nodes;i++)
+    {
+        for(j=0;j<nodes;j++)
+        {
+            scanf("%d",&costmat[i][j]);
+            costmat[i][i]=0;
+            rt[i].dist[j]=costmat[i][j];//initialise the distance equal to cost matrix
+            rt[i].from[j]=j;
+        }
+    }
+        do
+        {
+            count=0;
+            for(i=0;i<nodes;i++)//We choose arbitary vertex k and we calculate the direct distance from the node i to k using the cost matrix
+            //and add the distance from k to node j
+            for(j=0;j<nodes;j++)
+            for(k=0;k<nodes;k++)
+                if(rt[i].dist[j]>costmat[i][k]+rt[k].dist[j])
+                {//We calculate the minimum distance
+                    rt[i].dist[j]=rt[i].dist[k]+rt[k].dist[j];
+                    rt[i].from[j]=k;
+                    count++;
+                }
+        }while(count!=0);
+        for(i=0;i<nodes;i++)
+        {
+            printf("\n\n For router %d\n",i+1);
+            for(j=0;j<nodes;j++)
+            {
+                printf("\t\nnode %d via %d Distance %d ",j+1,rt[i].from[j]+1,rt[i].dist[j]);
+            }
+        }
+    printf("\n\n");
+}
